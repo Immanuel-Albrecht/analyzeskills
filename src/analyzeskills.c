@@ -234,7 +234,7 @@ int main(int argc, const char *argv[])
         printf("Largest antichain in %d-elementary powerset: %"PRIu64"\n",dnf_skills, antichain);
         if (antichain < incomparables)
         {
-            printf("Too many incomparable responses for %d skills!\n",incomparables);
+            printf("Too many incomparable responses (%d) for %d skills!\n",incomparables,dnf_skills);
             break;
         }
         
