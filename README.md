@@ -7,22 +7,29 @@ which skill sets solve which item.
 
 
 Prerequisites:
+--------------
    libCPROPS 0.1.12,
    use archive found in ./libs.
    Build and install first.
 
 Build:
+------
 
+```
  mkdir build
  cd build
  cmake ..
  make
+```
 
 Demo:
+-----
+```
  ./analyzeskills ../summerschool.txt
+```
 
 Output:
-
+```
   >   Response Dimensions: 9 Subjects x 8 Items
   >   M=
   >   ........
@@ -93,8 +100,10 @@ Output:
   >   Searching for pDNF L2 and skill matrix S2 with 3 elements...
   >   Largest antichain in 3-elementary powerset: 3
   >   Too many incomparable responses for 7 skills!
+```
 
 Response Pattern Format:
+------------------------
   Each line gives the response of one subject,
   write 'X' for items that have been solved,
   otherwise, write '.'. No extra characters 
