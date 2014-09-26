@@ -99,7 +99,7 @@ Output:
   >   .XXX
   >   Searching for pDNF L2 and skill matrix S2 with 3 elements...
   >   Largest antichain in 3-elementary powerset: 3
-  >   Too many incomparable responses for 7 skills!
+  >   Too many incomparable responses (7) for 3 skills!
 ```
 
 Response Pattern Format:
