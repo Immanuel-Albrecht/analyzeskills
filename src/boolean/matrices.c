@@ -34,7 +34,7 @@ matrix matrix_alloc(int rows, int cols) {
 
     x->rows = rows;
     x->cols = cols;
-    x->width= WIDTH(rows);
+    x->width= WIDTH(cols);
 
     x->incidence = calloc(x->width*x->rows,sizeof(chunk_t));
     assert(x->incidence);
