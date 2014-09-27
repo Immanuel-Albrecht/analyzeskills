@@ -125,7 +125,7 @@ int matrix_next_closure(matrix ctx, cb_next_closure callback, void *user)
 				 * we found the next intent
 				 */
 
-                if (callback(M,user,0)) {
+                if (callback(Y,user,0)) {
                     vector_free(M);
                     vector_free(Y);
                     return 1;
@@ -174,6 +174,10 @@ int matrix_count_concepts(matrix ctx) {
 
 static int mccm_cb(vector V, void *user, int thread) {
     int *pI = user;
+
+    if (vector_isOnes(V)) /** ignore the bottom vector */
+        return 0;
+
     int sum = vector_checksum(V);
     
     if (sum > *pI)
@@ -182,6 +186,12 @@ static int mccm_cb(vector V, void *user, int thread) {
     return 0;
 }
 
+/**
+ * returns the maximal number of set attributes of the 
+ * atoms of the concept lattice.
+ *
+ * probably pretty dumb to go through all concepts for this.
+ */
 int matrix_concept_checksum_max(matrix ctx) {
     int max;
     max = 0;

@@ -81,6 +81,19 @@ typedef uint64_t chunk_t;
  */
 #define MASKVECTOR(v,x) {if (BITNBR((x))) { *((v)+OFFSET((x)-1)) = ( (*((v)+OFFSET((x)-1))>>(63-BITNBR((x)-1))) ) << (63-BITNBR((x)-1));  }}
 
+
+/**
+ * @def CMPLASTMASK(x)
+ *
+ * x __ size of vector in bits
+ *
+ * gets the comparison bit-mask for the last element of a bit-vector, i.e.
+ *   if BITNBR(x) == 0,  then CMPLASTMASK(x) == ~(0ULL),
+ *   otherwise                CMPLASTMASK(x) == CRIMPVALUE(BITNBR(x-1))
+ */
+
+#define CMPLASTMASK(x) ( (BITNBR(x) ? CRIMPVALUE(BITNBR(x-1)) : ~(0ULL)) )
+
 /**
  * @def  CROSSV(v,x)
  * crosses the x-th attribute of an attribute vector
@@ -148,6 +161,7 @@ vector vector_dup(vector V);
 vector vector_dup_matrix_row(matrix M, int row);
 vector vector_from_cstr(const char* row);
 int vector_isZero(vector V);
+int vector_isOnes(vector V);
 void vector_free(vector V);
 
 void vector_clear(vector V);

@@ -415,6 +415,19 @@ int vector_isZero(vector V) {
 
     return 1;
 }
+int vector_isOnes(vector V) {
+    int i;
+
+    for (i = 0; i < V->width-1; i++) {
+        if (~ V->incidence[i])
+            return 0;
+    }
+
+    if ((~V->incidence[V->width-1]) & CMPLASTMASK(V->size))
+        return 0;
+
+    return 1;
+}
 
 void vector_fput(vector V, FILE* f) {
     int j;
