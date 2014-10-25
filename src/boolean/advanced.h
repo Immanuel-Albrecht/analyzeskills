@@ -1,4 +1,4 @@
-/**
+/*
  * advanced.h, (c) 2014, Immanuel Albrecht; Dresden University of
  * Technology, Professur für die Psychologie des Lernen und Lehrens
  *

@@ -1,4 +1,4 @@
-/**
+/*
  * fca.c, (c) 2014, Immanuel Albrecht; Dresden University of
  * Technology, Professur für die Psychologie des Lernen und Lehrens
  *
@@ -37,8 +37,13 @@
 #include "fca.h"
 
 
-/**
- * take some input intent B\subseteqM, calculate B''.
+/** @brief calculate .'' for an intent-bit-vector
+ *
+ * @param output  <-- input''
+ * @param input  attributes to be closed
+ * @param context formal context matrix I
+ *
+ *
  */
 void vector_close_intent(vector input, matrix context, vector output) {
     assert(output->size == context->cols);
@@ -57,13 +62,18 @@ void vector_close_intent(vector input, matrix context, vector output) {
 }
 
 
-/**
+/** @brief run next_closure algorithm on ctx, uses callback
+ *
+ * @param ctx the context represented as bit-matrix
+ * @param callback routine called on each intent-vector that
+ *                 belongs to a concept of ctx.
+ * @param user user data pointer
  *
  * run the next closure algorithm on the given context,
  * call the callback for every attribute-vector that belongs
  * to a concept, and hand over user parameter
  *
- * returns 1 if aborted by the callback, 0 else
+ * @returns 1 if aborted by the callback, 0 else
  */
 int matrix_next_closure(matrix ctx, cb_next_closure callback, void *user)
 {
@@ -75,7 +85,7 @@ int matrix_next_closure(matrix ctx, cb_next_closure callback, void *user)
     vector Y = vector_alloc(ctx->cols);
     vector DELTA;
 
-	/**
+	/*
 	 * calculate the bottom intent of the concept lattice, i.e. {}''
 	 */
 	vector_close_intent(Y,ctx, M);
@@ -87,18 +97,23 @@ int matrix_next_closure(matrix ctx, cb_next_closure callback, void *user)
         return 1;
     }
 
-	/**
+	/*
 	 * begin of nextClosure function iteration
 	 */
 	nextClosure:
 
 	for (i = ctx->cols; i > 0;)
 	{
+        //puts("M=");
+        //vector_fput(M,stdout);
 		--i;
 
 		if (!INCIDESV(M->incidence,i))
 		{
 			CROSSV(M->incidence, i);
+            //puts("M+i=");
+            //vector_fput(M,stdout);
+
 			vector_close_intent(M, ctx, Y);
 
 			good = 1;
@@ -113,15 +128,22 @@ int matrix_next_closure(matrix ctx, cb_next_closure callback, void *user)
 			}
 			if (good)
 			{
-				if (Y->incidence[OFFSET(i)] & (~M->incidence[OFFSET(i)]) & CRIMPVALUE(i))
+                //puts("Y=");
+                //vector_fput(Y,stdout);
+				if (Y->incidence[OFFSET(i)] 
+                        & (~ M->incidence[OFFSET(i)])
+                        & CRIMPVALUE(i))
 				{
 					good = 0;
+                    //printf("%"PRIx64" CRIMP\n",CRIMPVALUE(i));
+                    //printf("%"PRIx64" Y\n",Y->incidence[OFFSET(i)]);
+                    //printf("%"PRIx64" M\n",M->incidence[OFFSET(i)]);
 				}
 			}
 
 			if (good)
 			{
-				/**
+				/*
 				 * we found the next intent
 				 */
 
@@ -131,14 +153,14 @@ int matrix_next_closure(matrix ctx, cb_next_closure callback, void *user)
                     return 1;
                 }
 
-				/**
+				/*
 				 * continue with Y for M
 				 */
 
 				DELTA = M;
 				M = Y;
 				Y = DELTA;
-				/**
+				/*
 				 * do the nextClosure
 				 */
 				goto nextClosure;
@@ -148,7 +170,7 @@ int matrix_next_closure(matrix ctx, cb_next_closure callback, void *user)
 		CLEARV(M->incidence, i);
 	}
 
-	/**
+	/*
 	 * free up memory
 	 */
 
@@ -164,7 +186,11 @@ static int mcc_cb(vector V, void *user, int thread) {
 
     return 0;
 }
-
+/** @brief uses next_closure to count the number of concepts
+ *
+ *
+ *
+ */
 int matrix_count_concepts(matrix ctx) {
     int count;
     count = 0;
@@ -187,7 +213,9 @@ static int mccm_cb(vector V, void *user, int thread) {
 }
 
 /**
- * returns the maximal number of set attributes of the 
+ * @brief max. number of set attribute bits for atoms of the concept lattice
+ *
+ * @returns the maximal number of set attributes of the 
  * atoms of the concept lattice.
  *
  * probably pretty dumb to go through all concepts for this.
@@ -203,6 +231,441 @@ static int mcf_cb(vector V, void *user, int thread) {
     vector_fput(V,user);
     return 0;
 }
+
+/** @brief print all concepts of ctx using next_closure
+ *
+ *
+ *
+ */
 void matrix_concept_fput(matrix ctx, FILE* f) {
     matrix_next_closure(ctx,mcf_cb,f);
+}
+/** @brief like matrix_next_closure for an ideal
+ *
+ * @param attributes set that generates the ideal 
+ *                   (i.e. subset of allowed concept intents)
+ *
+ * @param ctx the context represented as bit-matrix
+ * @param callback routine called on each intent-vector that
+ *                 belongs to a concept of ctx.
+ * @param user user data pointer
+ *
+ * 
+ * next closure that only returns intents that
+ * have at least the given attributes
+ *
+ * @returns 1 if aborted by the callback, 0 else
+ */
+int matrix_next_closure_ideal(matrix ctx, vector attributes,
+        cb_next_closure callback, void *user)
+{
+    int i, j, good;
+
+    assert(attributes->size == ctx->cols);
+
+    assert(ctx);
+
+    vector M0 = vector_alloc(ctx->cols);
+    vector M,Y;
+    vector DELTA;
+
+	/*
+	 * calculate the bottom intent of the concept sub-lattice, i.e. {}''
+	 */
+	vector_close_intent(attributes,ctx, M0);
+
+    if (callback(M0,user,0))
+    {
+        vector_free(M0);
+        return 1;
+    }
+
+    /* initialize M and Y */
+
+    Y = vector_alloc(ctx->cols);
+    M = vector_dup(M0);
+
+	/*
+	 * begin of nextClosure function iteration
+	 */
+	nextClosure:
+
+	for (i = ctx->cols; i > 0;)
+	{
+        //puts("M=");
+        //vector_fput(M,stdout);
+		--i;
+
+        if (INCIDESV(M0->incidence, i))
+            /* keep the attributes of M0 */
+            continue; 
+
+		if (!INCIDESV(M->incidence,i))
+		{
+			CROSSV(M->incidence, i);
+            //puts("M+i=");
+            //vector_fput(M,stdout);
+
+			vector_close_intent(M, ctx, Y);
+
+			good = 1;
+
+			for (j = 0; j < OFFSET(i); ++j)
+			{
+				if (Y->incidence[j] & (~(M->incidence[j])))
+				{
+					good = 0;
+					break;
+				}
+			}
+			if (good)
+			{
+                //puts("Y=");
+                //vector_fput(Y,stdout);
+				if (Y->incidence[OFFSET(i)] 
+                        & (~ M->incidence[OFFSET(i)])
+                        & CRIMPVALUE(i))
+				{
+					good = 0;
+                    //printf("%"PRIx64" CRIMP\n",CRIMPVALUE(i));
+                    //printf("%"PRIx64" Y\n",Y->incidence[OFFSET(i)]);
+                    //printf("%"PRIx64" M\n",M->incidence[OFFSET(i)]);
+				}
+			}
+
+			if (good)
+			{
+				/*
+				 * we found the next intent
+				 */
+
+                if (callback(Y,user,0)) {
+                    vector_free(M0);
+                    vector_free(M);
+                    vector_free(Y);
+                    return 1;
+                }
+
+				/*
+				 * continue with Y for M
+				 */
+
+				DELTA = M;
+				M = Y;
+				Y = DELTA;
+				/*
+				 * do the nextClosure
+				 */
+				goto nextClosure;
+			}
+		}
+
+		CLEARV(M->incidence, i);
+	}
+
+	/*
+	 * free up memory
+	 */
+
+    vector_free(M0);
+	vector_free(M);
+	vector_free(Y);
+
+	return 0;
+}
+
+/** @brief like matrix_next_closure, but for some filter
+ *
+ * @param attributes  attributes that defines the filter 
+ *                    (i.e. superset of allowed concept intents)
+ *
+ * @param ctx the context represented as bit-matrix
+ * @param callback routine called on each intent-vector that
+ *                 belongs to a concept of ctx.
+ * @param user user data pointer
+ *
+ * run the next closure algorithm on the given context,
+ * call the callback for every attribute-vector that belongs
+ * to a concept, and hand over user parameter
+ *
+ * @returns 1 if aborted by the callback, 0 else
+ */
+int matrix_next_closure_filter(matrix ctx, vector attributes, cb_next_closure callback, void *user)
+{
+    int i, j, good;
+
+    assert(ctx);
+    assert(ctx->cols == attributes->size);
+
+    vector M = vector_alloc(ctx->cols);
+    vector Y = vector_alloc(ctx->cols);
+    vector DELTA;
+
+    /* store the forbidden attributes set */
+    vector invM1 = vector_dup(attributes);
+    vector_Inv(invM1);
+
+	/*
+	 * calculate the bottom intent of the concept lattice, i.e. {}''
+	 */
+	vector_close_intent(Y,ctx, M);
+
+    /* check whether we are still in the filter */
+    if (! vector_AdisjointB(invM1, M)) {
+        vector_free(M);
+        vector_free(Y);
+        vector_free(invM1);
+
+        return 0;
+    }
+    
+
+    if (callback(M,user,0))
+    {
+        vector_free(M);
+        vector_free(Y);
+        vector_free(invM1);
+        return 1;
+    }
+
+	/*
+	 * begin of nextClosure function iteration
+	 */
+	nextClosure:
+
+	for (i = ctx->cols; i > 0;)
+	{
+        //puts("M=");
+        //vector_fput(M,stdout);
+		--i;
+
+        if (INCIDESV(invM1->incidence, i))
+            continue;
+
+		if (!INCIDESV(M->incidence,i))
+		{
+			CROSSV(M->incidence, i);
+            //puts("M+i=");
+            //vector_fput(M,stdout);
+
+			vector_close_intent(M, ctx, Y);
+
+            /* check whether there are attributes in Y that aren't in the
+             * attributes-parameter
+             */
+			good = vector_AdisjointB(invM1,Y);
+
+            if (good) {
+                for (j = 0; j < OFFSET(i); ++j)
+                {
+                    if (Y->incidence[j] & (~(M->incidence[j])))
+                    {
+                        good = 0;
+                        break;
+                    }
+                }
+            }
+
+			if (good)
+			{
+                //puts("Y=");
+                //vector_fput(Y,stdout);
+				if (Y->incidence[OFFSET(i)] 
+                        & (~ M->incidence[OFFSET(i)])
+                        & CRIMPVALUE(i))
+				{
+					good = 0;
+                    //printf("%"PRIx64" CRIMP\n",CRIMPVALUE(i));
+                    //printf("%"PRIx64" Y\n",Y->incidence[OFFSET(i)]);
+                    //printf("%"PRIx64" M\n",M->incidence[OFFSET(i)]);
+				}
+			}
+
+			if (good)
+			{
+				/*
+				 * we found the next intent
+				 */
+
+                if (callback(Y,user,0)) {
+                    vector_free(M);
+                    vector_free(Y);
+                    vector_free(invM1);
+                    return 1;
+                }
+
+				/*
+				 * continue with Y for M
+				 */
+
+				DELTA = M;
+				M = Y;
+				Y = DELTA;
+				/*
+				 * do the nextClosure
+				 */
+				goto nextClosure;
+			}
+		}
+
+		CLEARV(M->incidence, i);
+	}
+
+	/*
+	 * free up memory
+	 */
+
+	vector_free(M);
+	vector_free(Y);
+    vector_free(invM1);
+
+	return 0;
+}
+/** @brief like matrix_next_closure, for a given interval
+ *
+ *
+ * 
+ *
+ */
+int matrix_next_closure_interval(matrix ctx, vector subset_of_attrs, vector superset_of_attrs, 
+        cb_next_closure callback, void *user) 
+{
+
+    int i, j, good;
+
+    assert(ctx);
+    assert(ctx->cols == superset_of_attrs->size);
+    assert(ctx->cols == subset_of_attrs->size);
+
+    vector M0 = vector_alloc(ctx->cols);
+	vector_close_intent(subset_of_attrs,ctx,M0);
+
+	/*
+	 * calculate the bottom intent of the concept sub-lattice, i.e. {}''
+	 */
+    vector M,Y;
+    vector DELTA;
+
+    /* store the forbidden superset_of_attrs set */
+    vector invM1 = vector_dup(superset_of_attrs);
+    vector_Inv(invM1);
+
+	/*
+	 * calculate the bottom intent of the concept lattice, i.e. {}''
+	 */
+	vector_close_intent(subset_of_attrs,ctx, M0);
+
+    /* check whether we are still in the filter */
+    if (! vector_AdisjointB(invM1, M0)) {
+        vector_free(M0);
+        vector_free(invM1);
+
+        return 0;
+    }
+
+    if (callback(M0,user,0))
+    {
+        vector_free(M0);
+        vector_free(invM1);
+        return 1;
+    }
+
+    /* now, allocate the loop variables */
+    Y = vector_alloc(ctx->cols);
+    M = vector_dup(M0);
+
+	/*
+	 * begin of nextClosure function iteration
+	 */
+	nextClosure:
+
+	for (i = ctx->cols; i > 0;)
+	{
+        //puts("M=");
+        //vector_fput(M,stdout);
+		--i;
+
+        if ((INCIDESV(invM1->incidence, i))||(INCIDESV(M0->incidence,i)))
+            continue;
+
+		if (!INCIDESV(M->incidence,i))
+		{
+			CROSSV(M->incidence, i);
+            //puts("M+i=");
+            //vector_fput(M,stdout);
+
+			vector_close_intent(M, ctx, Y);
+
+            /* check whether there are superset_of_attrs in Y that aren't in the
+             * superset_of_attrs-parameter
+             */
+			good = vector_AdisjointB(invM1,Y);
+
+            if (good) {
+                for (j = 0; j < OFFSET(i); ++j)
+                {
+                    if (Y->incidence[j] & (~(M->incidence[j])))
+                    {
+                        good = 0;
+                        break;
+                    }
+                }
+            }
+
+			if (good)
+			{
+                //puts("Y=");
+                //vector_fput(Y,stdout);
+				if (Y->incidence[OFFSET(i)] 
+                        & (~ M->incidence[OFFSET(i)])
+                        & CRIMPVALUE(i))
+				{
+					good = 0;
+                    //printf("%"PRIx64" CRIMP\n",CRIMPVALUE(i));
+                    //printf("%"PRIx64" Y\n",Y->incidence[OFFSET(i)]);
+                    //printf("%"PRIx64" M\n",M->incidence[OFFSET(i)]);
+				}
+			}
+
+			if (good)
+			{
+				/*
+				 * we found the next intent
+				 */
+
+                if (callback(Y,user,0)) {
+                    vector_free(M);
+                    vector_free(Y);
+                    vector_free(M0);
+                    vector_free(invM1);
+                    return 1;
+                }
+
+				/*
+				 * continue with Y for M
+				 */
+
+				DELTA = M;
+				M = Y;
+				Y = DELTA;
+				/*
+				 * do the nextClosure
+				 */
+				goto nextClosure;
+			}
+		}
+
+		CLEARV(M->incidence, i);
+	}
+
+	/*
+	 * free up memory
+	 */
+
+	vector_free(M);
+	vector_free(M0);
+	vector_free(Y);
+    vector_free(invM1);
+
+	return 0;
 }

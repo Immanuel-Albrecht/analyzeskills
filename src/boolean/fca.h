@@ -1,4 +1,4 @@
-/**
+/*
  * fca.h, (c) 2014, Immanuel Albrecht; Dresden University of
  * Technology, Professur für die Psychologie des Lernen und Lehrens
  *
@@ -39,6 +39,12 @@ typedef fn_cb_next_closure *cb_next_closure;
 void vector_close_intent(vector input, matrix context, vector output);
 
 int matrix_next_closure(matrix ctx, cb_next_closure callback, void *user);
+int matrix_next_closure_ideal(matrix ctx, vector attributes,
+        cb_next_closure callback, void *user);
+int matrix_next_closure_filter(matrix ctx, vector attributes, 
+        cb_next_closure callback, void *user);
+int matrix_next_closure_interval(matrix ctx, vector subset_of_attrs, vector superset_of_attrs, 
+        cb_next_closure callback, void *user) ;
 int matrix_count_concepts(matrix ctx);
 
 int matrix_concept_checksum_max(matrix ctx);

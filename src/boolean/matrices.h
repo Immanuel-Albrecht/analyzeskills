@@ -1,4 +1,4 @@
-/**
+/*
  * matrices.h, (c) 2014, Immanuel Albrecht; Dresden University of
  * Technology, Professur für die Psychologie des Lernen und Lehrens
  *
@@ -192,11 +192,20 @@ int vector_AsubsetB(vector A, vector B);
 int vector_row_AsubsetB(matrix A, int row, vector B);
 int vector_AsubsetB_row(vector A, matrix B, int row);
 
-int vector_count_crosses(vector V);
+int vector_AdisjointB(vector A, vector B);
 
+#define vector_count_crosses vector_checksum
+
+/** @brief (int, vector)-pair
+ *
+ * 
+ * This structure is used as a conjunctive-element in an DNF pseudo-matrix,
+ * where i is the column that gets a mark if the input vector is a superset of V
+ *
+ */
 typedef struct t_int_vector {
-    int i;
-    vector V;
+    int i;//!< output column that shall receive the cross.
+    vector V;//!< produce a cross, if the input vector is a superset of this.
 } s_int_vector;
 typedef s_int_vector *int_vector;
 

@@ -1,4 +1,4 @@
-/**
+/*
  * advanced.c, (c) 2014, Immanuel Albrecht; Dresden University of
  * Technology, Professur für die Psychologie des Lernen und Lehrens
  *
@@ -37,11 +37,18 @@
 #include <cprops/rb.h>
 
 
-/**
- * matrix A is going to be changed, B and C stay the same.
- * Tries to find a valid matrix B, s.t. A{gprod}(B^T) = C.
- * return 1, if the problem could be solved, 0 otherwise.
- * In case of a return value >0, B contains the desired matrix.
+/** @brief tries to find matrix A, such that A*transposed(B) = C
+ *
+ * @param A matrix, going to be changed.
+ *          In case of a return value >0, A contains the desired matrix.
+ *
+ * @param B skill matrix, subjects=rows.
+ * @param C response matrix, subjects=rows
+ *
+ *
+ * Tries to find a valid matrix B, s.t. A{gprod}(B^T) = C^T.
+ *
+ * @returns 1, if the problem could be solved, 0 otherwise.
  */
 int matrix_solveB_AimpliesBeqC(matrix A, matrix B, matrix C) {
     int i,j,k;
@@ -90,9 +97,11 @@ int matrix_solveB_AimpliesBeqC(matrix A, matrix B, matrix C) {
     matrix_free(AimpliesB);
     return 1;
 }
-
-
-
+/**
+ * @struct t_fjb_data
+ *
+ * @brief struct private to fjb_callback .
+ **/
 typedef struct t_fjb_data {
     cp_vector *base;
 
@@ -128,7 +137,7 @@ static int fjb_callback(void* entry, void* user) {
     }
 
     if (vector_cmp(V,J)) {
-        /** 
+        /*
          * V is not covered by the base! 
          *
          * if (diff) was part of the base, we would have a 
@@ -136,7 +145,7 @@ static int fjb_callback(void* entry, void* user) {
          *
          **/
         
-        /** remove the parts that are covered by diff from the
+        /* remove the parts that are covered by diff from the
          * other base vectors that*/
         for (i = 0; i < N; i++) {
             x = cp_vector_element_at(data->base,i);
@@ -144,7 +153,7 @@ static int fjb_callback(void* entry, void* user) {
                 vector_minusB(x,diff);  
         }
 
-        /** this might have created vectors that can be represented
+        /* this might have created vectors that can be represented
          * by other vectors
          */
         for (i = 0; i < N; i++) {
@@ -161,7 +170,7 @@ static int fjb_callback(void* entry, void* user) {
             }
 
             if (vector_cmp(J,x)==0) {
-                /** x is in the join-hull of the other base vectors */
+                /* x is in the join-hull of the other base vectors */
                 cp_vector_remove_element_at(data->base, i);
                 N --;
                 i --;
@@ -179,15 +188,15 @@ static int fjb_callback(void* entry, void* user) {
     return 0;
 }
 
-/**
+/** @brief find an orded set of bit-vectors, that acts as base on vector_set
+ *
  * takes cp_avltree* whose keys are of the type vector,
  * and calculates a base, such that each key is a the
  * join of a unique combination of these base elements.
  *
- * returns a cp_vector* containing vectors,
- * has to be freed by the caller using
- *
- *    cp_vector_destroy_custom( find_join_base(...) ,vector_free);
+ * @returns a cp_vector* containing vectors,
+ *       has to be freed by the caller using
+ *        cp_vector_destroy_custom( find_join_base(...) ,vector_free);
  */
 cp_vector *find_join_base(cp_avltree *vector_set) {
     s_fjb_data s_data;
@@ -199,7 +208,7 @@ cp_vector *find_join_base(cp_avltree *vector_set) {
     return data->base;
 }
 
-/**
+/** @brief get "solves"-matrix A and skill matrix B from response matrix C
  *
  * Input: C(.,.), where
  *   each row C(i,.) corresponds to the response pattern of
@@ -257,7 +266,7 @@ void generate_skill_matrix(matrix *pA, matrix *pB, matrix C) {
     matrix A = *pA;
     matrix B = *pB;
 
-    /** the response base gives
+    /* the response base gives
      * the information, which items 
      * can be solved by a corresponding
      * compound-skill
@@ -271,7 +280,7 @@ void generate_skill_matrix(matrix *pA, matrix *pB, matrix C) {
         }
     }
 
-    /**
+    /*
      * every candidate gets assigned all those
      * skills, that are coherent with his/her
      * response. I.e. if the candidate fails
@@ -327,13 +336,15 @@ static int grmc_callback(void* entry, void* user) {
     return 0;
 }
 
-/**
- * returns a new avltree that contains all meets
- * of rows of the matrix C
+/** @brief return the set of all possible, non-trivial meets of rows of C. 
+ * I.e. (excluding the empty meet)
  *
- * the result has to be destroyed by the caller, using
  *
+ * @returns a new avltree that contains all meets
+ * of rows of the matrix C.
+ * The result has to be destroyed by the caller, using
  *   cp_avltree_destroy_custom( .., vector_free, 0);
+ *
  */
 cp_avltree* get_row_meet_closure(matrix C) {
     cp_avltree *set = cp_avltree_create(vector_cmp);

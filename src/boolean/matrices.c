@@ -1,4 +1,4 @@
-/**
+/*
  * matrices.c, (c) 2014, Immanuel Albrecht; Dresden University of
  * Technology, Professur für die Psychologie des Lernen und Lehrens
  *
@@ -28,7 +28,16 @@
 #include <float.h>
 #include <inttypes.h>
 
-matrix matrix_alloc(int rows, int cols) {
+//#define TESTVGRIND 1
+
+/** @brief create a new matrix of given size
+ *
+ *
+ *
+ */
+matrix matrix_alloc(int rows,
+        int cols
+        ) {
     matrix x = malloc(sizeof(*x));
     assert(x);
 
@@ -39,8 +48,20 @@ matrix matrix_alloc(int rows, int cols) {
     x->incidence = calloc(x->width*x->rows,sizeof(chunk_t));
     assert(x->incidence);
 
+    /* valgrind testing */
+#ifdef TESTVGRIND
+    CROSSV(ROW(rows-1,x), cols-1);
+    CLEARV(ROW(rows-1,x), cols-1);
+#endif
+
     return x;
 }
+
+/** @brief duplicate given matrix object
+ *
+ *
+ *
+ */
 
 matrix matrix_dup(matrix M) {
     matrix x = matrix_alloc(M->rows, M->cols);
@@ -49,7 +70,11 @@ matrix matrix_dup(matrix M) {
 
     return x;
 }
-
+/** @brief dup's and the transposed of the given matrix object
+ *
+ *
+ *
+ */
 matrix matrix_dupT(matrix M) {
     int i;
     int j;
@@ -66,8 +91,11 @@ matrix matrix_dupT(matrix M) {
     return x;
 }
 
-/**
- * returns matrix product of A and transposed(B).
+/** @brief dup's the matrix product of A and transposed(B).
+ *
+ * here, the standard relations product is used, i.e.
+ *
+ * AxBT(x,y) = Exists z? A(x,z) AND B(x,z)
  */
 matrix matrix_dupAxBT(matrix A, matrix B) {
     assert(A->cols == B->cols);
@@ -94,8 +122,9 @@ matrix matrix_dupAxBT(matrix A, matrix B) {
 
     return x;
 }
-/**
- * returns the transposed matrix product of A and transposed(B).
+/** @brief dup's the transposed of the matrix product of A and transposed(B).
+ *
+ * i.e. returns transposed(AxBT)
  */
 matrix matrix_dupAxBT_T(matrix A, matrix B) {
     assert(A->cols == B->cols);
@@ -125,7 +154,7 @@ matrix matrix_dupAxBT_T(matrix A, matrix B) {
 
 
 /**
- * returns X(i,j) = AND_x: A(i,x)--->B(j,x)
+ * @brief dup's the matrix X(i,j) = AND_x: A(i,x)--->B(j,x)
  */
 matrix matrix_dupAimpliesB(matrix A, matrix B) {
     assert(A->cols == B->cols);
@@ -159,15 +188,20 @@ matrix matrix_dupAimpliesB(matrix A, matrix B) {
     return x;
 }
 
-
+/** @brief reset the matrix to all zeros.
+ *
+ *
+ *
+ */
 void matrix_clear(matrix M) {
     assert(M);
 
     memset(M->incidence,0,M->width*M->rows*sizeof(chunk_t));
 }
 
-/**
- * returns -1 if matrix A is less than matrix B,
+/** @brief compares two matrix objects
+ *
+ * @returns -1 if matrix A is less than matrix B,
  *          1 if matrix A is bigger than matrix B
  */
 int matrix_cmp(void *A, void *B) {
@@ -202,7 +236,9 @@ int matrix_cmp(void *A, void *B) {
     return 0;
 }
 /**
- * returns -1 if matrix row A(i,.) is less than matrix row B(j,.),
+ * @brief compare the rows of two matrices (of the same width!)
+ *
+ * @returns -1 if matrix row A(i,.) is less than matrix row B(j,.),
  *          1 if matrix row A(i,.) is bigger than matrix row B(j,.)
  */
 int matrix_row_cmp(matrix A, int i, matrix B, int j) {
@@ -228,6 +264,11 @@ int matrix_row_cmp(matrix A, int i, matrix B, int j) {
     return 0;
 }
 
+/** @brief check whether M is all zeros
+ *
+ *
+ *
+ */
 int matrix_isZero(matrix M) {
     int i,N;
     N = M->rows*M->width;
@@ -239,7 +280,11 @@ int matrix_isZero(matrix M) {
 
     return 1;
 }
-
+/** @brief Check whether for all i: matrix_row_cmp(M,i,M,i+1) > 0
+ *
+ *
+ *
+ */
 int matrix_isRowAscending(matrix M) {
     int i;
 
@@ -250,12 +295,20 @@ int matrix_isRowAscending(matrix M) {
 
     return 1;
 }
-
+/** @brief free the matrix object
+ *
+ *
+ *
+ */
 void matrix_free(matrix x) {
     free(x->incidence);
     free(x);
 }
-
+/** @brief print the matrix using 'X' and '.' to f
+ *
+ *
+ *
+ */
 void matrix_fput( matrix  x, FILE *f) {
     int i,j;
     for (i = 0; i < x->rows; i++) {
@@ -268,7 +321,12 @@ void matrix_fput( matrix  x, FILE *f) {
         fputs("\n",f);
     }
 }
-
+/** @brief set a coded bit-stream row vector according to the given string
+ *
+ * @param row ptr to chunk_t[N] with N*64 >= strlen(coded)
+ * @param coded c_string representing the bits
+ *
+ */
 void row_set( chunk_t *row, const char* coded ) {
     int i;
 
@@ -284,6 +342,12 @@ void row_set( chunk_t *row, const char* coded ) {
     }
 }
 
+/** @brief Flip all matrix values
+ *
+ * i.e. matrix_Inv(M)(i,j) = NOT M(i,j)
+ *
+ *
+ */
 void matrix_Inv(matrix M) {
     int i;
     for (i = 0; i < M->rows*M->width; i++) {
@@ -294,6 +358,11 @@ void matrix_Inv(matrix M) {
         MASKVECTOR(ROW(i,M), M->cols);
     }
 }
+/** @brief set M to all ones
+ *
+ *
+ *
+ */
 void matrix_ones(matrix M) {
     int i;
     for (i = 0; i < M->rows*M->width; i++) {
@@ -327,7 +396,11 @@ int matrix_increment(matrix M) {
 
     return 0;
 }
-
+/** @brief iterate through all possible row vectors in M(i,.)
+ *
+ * @returns zero if the resulting M(i,.) is all zeros.
+ *
+ */
 int matrix_increment_row(matrix M, int i) {
     int j;
 
@@ -346,6 +419,13 @@ int matrix_increment_row(matrix M, int i) {
     return 0;
 }
 
+/** @brief allocate a bit-vector of length (bits)
+ *
+ * @param length  length of the bit-vector, in bits
+ *
+ *
+ *
+ */
 vector vector_alloc(int length) {
     vector x = malloc(sizeof(*x));
     assert(x);
@@ -354,22 +434,43 @@ vector vector_alloc(int length) {
     
     x->incidence = calloc(x->width,sizeof(*x->incidence));
     assert( x->incidence );
+
+    /* valgrind testing */
+#ifdef TESTVGRIND
+    CROSSV(x->incidence, length-1);
+    CLEARV(x->incidence, length-1);
+#endif
     
     return x;    
 }
-
+/** @brief dup the bit-vector V
+ *
+ *
+ *
+ */
 vector vector_dup(vector V) {
     vector x = vector_alloc(V->size);
+
+    assert(V->width == x->width);
 
     memcpy(x->incidence, V->incidence, sizeof(*x->incidence)*V->width);
     return x;
 }
-
+/** @brief free given bit-vector object
+ *
+ *
+ *
+ */
 void vector_free(vector V) {
     free(V->incidence);
     free(V);
 }
 
+/** @brief dup's M(row,.) as bit-vector
+ *
+ *
+ *
+ */
 vector vector_dup_matrix_row(matrix M, int row) {
     vector x = vector_alloc(M->cols);
 
@@ -380,6 +481,13 @@ vector vector_dup_matrix_row(matrix M, int row) {
     return x;
 }
 
+/** @brief compares two bit-vectors
+ *
+ * @returns -1, if a is smaller than b
+ *           0, if a == b, and
+ *           1, if b is smaller than a
+ *
+ */
 int vector_cmp(void *a, void *b) {
 
     assert(a);
@@ -404,7 +512,11 @@ int vector_cmp(void *a, void *b) {
 
     return 0;
 }
-
+/** @brief check whether V is all zeros
+ *
+ *
+ *
+ */
 int vector_isZero(vector V) {
     int i;
 
@@ -415,6 +527,11 @@ int vector_isZero(vector V) {
 
     return 1;
 }
+/** @brief check, whether V is all ones.
+ *
+ *
+ *
+ */
 int vector_isOnes(vector V) {
     int i;
 
@@ -429,6 +546,11 @@ int vector_isOnes(vector V) {
     return 1;
 }
 
+/** @brief print the bit-vector using 'X' and '.' to f
+ *
+ *
+ *
+ */
 void vector_fput(vector V, FILE* f) {
     int j;
     for (j = 0; j < V->size; ++j) {
@@ -440,6 +562,11 @@ void vector_fput(vector V, FILE* f) {
     fputs("\n",f);
 }
 
+/** @brief dup's the vector A(.) AND NOT B(.)
+ *
+ *
+ *
+ */
 vector vector_dup_AminusB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -452,7 +579,11 @@ vector vector_dup_AminusB(vector A, vector B) {
 
     return x;
 }
-
+/** @brief dup's A(.) AND B(.)
+ *
+ *
+ *
+ */
 vector vector_dup_AandB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -465,6 +596,11 @@ vector vector_dup_AandB(vector A, vector B) {
 
     return x;
 }
+/** @brief dup's A(.) OR B(.)
+ *
+ *
+ *
+ */
 vector vector_dup_AorB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -477,6 +613,11 @@ vector vector_dup_AorB(vector A, vector B) {
 
     return x;
 }
+/** @brief dup's (A(.) AND NOT B(.)) OR (B(.) AND NOT A(.))
+ *
+ *
+ *
+ */
 vector vector_dup_AxorB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -489,6 +630,12 @@ vector vector_dup_AxorB(vector A, vector B) {
 
     return x;
 }
+/** @brief creates a bit-vector from a given string
+ *
+ * @param row  ./X coding of a bit-vector
+ *
+ *
+ */
 vector vector_from_cstr(const char* row) {
     vector x = vector_alloc(strlen(row));
     int i;
@@ -504,6 +651,12 @@ vector vector_from_cstr(const char* row) {
 
     return x;
 }
+
+/** @brief A(.) = A(.) AND NOT B(.)
+ *
+ *
+ *
+ */
 vector vector_minusB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -517,6 +670,11 @@ vector vector_minusB(vector A, vector B) {
     return x;
 }
 
+/** @brief A(.) = A(.) AND NOT B(i,.)
+ *
+ *
+ *
+ */
 vector vector_minusB_row(vector A, matrix B, int row) {
     assert(A->size == B->cols);
 
@@ -529,6 +687,12 @@ vector vector_minusB_row(vector A, matrix B, int row) {
 
     return x;
 }
+
+/** @brief A(.) = A(.) AND B(i,.)
+ *
+ *
+ *
+ */
 vector vector_andB_row(vector A, matrix B, int row) {
     assert(A->size == B->cols);
 
@@ -541,6 +705,12 @@ vector vector_andB_row(vector A, matrix B, int row) {
 
     return x;
 }
+
+/** @brief A(.) = A(.) OR B(i,.)
+ *
+ *
+ *
+ */
 vector vector_orB_row(vector A, matrix B, int row) {
     assert(A->size == B->cols);
 
@@ -553,6 +723,12 @@ vector vector_orB_row(vector A, matrix B, int row) {
 
     return x;
 }
+
+/** @brief A(.) = [A(.) AND NOT B(i,.)] OR [B(i,.) AND NOT A(.)]
+ *
+ *
+ *
+ */
 vector vector_xorB_row(vector A, matrix B, int row) {
     assert(A->size == B->cols);
 
@@ -565,6 +741,11 @@ vector vector_xorB_row(vector A, matrix B, int row) {
 
     return x;
 }
+/** @brief A(.) = A(.) AND B(.)
+ *
+ *
+ *
+ */
 vector vector_andB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -577,6 +758,11 @@ vector vector_andB(vector A, vector B) {
 
     return x;
 }
+/** @brief A(.) = A(.) OR B(.)
+ *
+ *
+ *
+ */
 vector vector_orB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -589,6 +775,11 @@ vector vector_orB(vector A, vector B) {
 
     return x;
 }
+/** @brief A(.) = [A(.) AND NOT B(.)] OR [B(.) AND NOT A(.)]
+ *
+ *
+ *
+ */
 vector vector_xorB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -601,6 +792,12 @@ vector vector_xorB(vector A, vector B) {
 
     return x;
 }
+
+/** @brief check, whether for all j : A(row,j) --> B(j)
+ *
+ *
+ *
+ */
 int vector_row_AsubsetB(matrix A, int row, vector B) {
     assert(A->cols == B->size);
 
@@ -613,7 +810,28 @@ int vector_row_AsubsetB(matrix A, int row, vector B) {
     return 1;
 }
 
+/** @brief check, whether for all i : A(i) AND B(i) == 0
+ *
+ *
+ *
+ */
+int vector_AdisjointB(vector A, vector B) {
+    assert(A->size == B->size);
 
+    int i;
+    for (i = 0; i < A->width; i++) {
+        if (A->incidence[i] & B->incidence[i])
+            return 0;
+    }
+
+    return 1;
+}
+
+/** @brief check, whether for all i : A(i) --> B(i)
+ *
+ *
+ *
+ */
 int vector_AsubsetB(vector A, vector B) {
     assert(A->size == B->size);
 
@@ -625,6 +843,12 @@ int vector_AsubsetB(vector A, vector B) {
 
     return 1;
 }
+
+/** @brief check, whether for all j : A(j) --> B(row,j)
+ *
+ *
+ *
+ */
 int vector_AsubsetB_row(vector A, matrix B, int row) {
     assert(A->size == B->cols);
 
@@ -637,11 +861,20 @@ int vector_AsubsetB_row(vector A, matrix B, int row) {
     return 1;
 }
 
-
+/** @brief set V to all zeros
+ *
+ *
+ *
+ */
 void vector_clear(vector V) {
     memset(V->incidence,0,V->width*sizeof(*V->incidence));
 
 }
+/** @brief set V to all ones
+ *
+ *
+ *
+ */
 void vector_ones(vector V) {
     int i;
     for (i = 0; i < V->width; i++) {
@@ -651,6 +884,11 @@ void vector_ones(vector V) {
     MASKVECTOR(V->incidence, V->size);
 
 }
+/** @brief A(.) = NOT A(.)
+ *
+ *
+ *
+ */
 void vector_Inv(vector V) {
     int i;
     for (i = 0; i < V->width; i++) {
@@ -661,6 +899,11 @@ void vector_Inv(vector V) {
 
 }
 
+/** @brief create a new (int,vector)-pair
+ *
+ *
+ *
+ */
 int_vector int_vector_alloc(int cols) {
     int_vector x = malloc(sizeof(s_int_vector));
     assert(x);
@@ -670,11 +913,21 @@ int_vector int_vector_alloc(int cols) {
     return x;
 }
 
+/** @brief free an (int,vector)-pair
+ *
+ *
+ *
+ */
 void int_vector_free(int_vector x) {
     vector_free(x->V);
     free(x);
 }
 
+/** @brief create a positive DNF object that generalizes a requirement-matrix
+ *
+ *
+ *
+ */
 positive_DNF_matrix positive_DNF_matrix_alloc(int rows, int cols) {
     positive_DNF_matrix x = malloc(sizeof(s_positive_DNF_matrix));
     assert(x);
@@ -686,12 +939,17 @@ positive_DNF_matrix positive_DNF_matrix_alloc(int rows, int cols) {
     return x;
 }
 
+/** @brief free a positive DNF object
+ *
+ *
+ *
+ */
 void positive_DNF_matrix_free(positive_DNF_matrix x) {
     cp_vector_destroy_custom(x->entries, int_vector_free);
     free(x);
 }
 
-/**
+/** @brief dup's transposed( DNF x transposed(B) )
  *
  * returns the matrix C = (DNF)x(B^T)^T
  * (if DNF is a DSF matrix determining which compound-skills can
@@ -725,6 +983,11 @@ matrix matrix_dup_DNFxBT_T(positive_DNF_matrix DNF, matrix B) {
     return C;
 }
 
+/** @brief print a positive DNF matrix replacement object to f
+ *
+ *
+ *
+ */
 void DNF_fput(const char* name,positive_DNF_matrix DNF, FILE* f) {
     int i,N;
     int empty;
@@ -758,7 +1021,15 @@ void DNF_fput(const char* name,positive_DNF_matrix DNF, FILE* f) {
            fprintf(f,"%s(%2d,.) = _|_\n",name,i);
     }
 }
-
+/** @brief create an (int,vector)-pair, taking ownership of V
+ *
+ * @param V  a vector that is used as vector part of the resulting object, 
+ *           and therefore will be deleted upon int_vector_free(..)
+ *
+ * @param i int part of the (int,vector)-pair object
+ *
+ *
+ */
 int_vector int_vector_alloc2(int i, vector V) {
 
     int_vector x = malloc(sizeof(s_int_vector));
@@ -770,6 +1041,14 @@ int_vector int_vector_alloc2(int i, vector V) {
     return x;
 }
 
+/** @brief add a new way to solve item row using (all) skills from data.
+ *
+ * @param row which item can be solved
+ * @param data ./X string representation of the skills needed to solve the item
+ * @param DNF matrix-replacement that is updated
+ *
+ *
+ */
 void DNF_add_row_from_cstr(positive_DNF_matrix DNF, int row, const char* data) {
     assert(row >= 0);
     assert(row < DNF->rows);
@@ -778,7 +1057,12 @@ void DNF_add_row_from_cstr(positive_DNF_matrix DNF, int row, const char* data) {
     
     cp_vector_add_element(DNF->entries, int_vector_alloc2(row, V));
 }
-
+/** @brief dup's a matrix M
+ *
+ *
+ * @returns a positive_DNF_matrix that will act on a skill matrix exactly like M
+ *
+ */
 positive_DNF_matrix DNF_dup_matrix(matrix M) {
     positive_DNF_matrix DNF = positive_DNF_matrix_alloc(M->rows, M->cols);
     
@@ -795,6 +1079,11 @@ positive_DNF_matrix DNF_dup_matrix(matrix M) {
     return DNF;
 }
 
+/** @brief add a new way to solve item row with skill col (only)
+ *
+ *
+ *
+ */
 void DNF_add_row_atom(positive_DNF_matrix DNF, int row, int col) {
     assert(row >= 0);
     assert(row < DNF->rows);
@@ -805,6 +1094,14 @@ void DNF_add_row_atom(positive_DNF_matrix DNF, int row, int col) {
     CROSSV(V->incidence,col);
     cp_vector_add_element(DNF->entries, int_vector_alloc2(row,V));
 }
+
+/** @brief create a cross_stats object
+ *
+ *
+ * @param rows  matrix dimensions
+ * @param cols  matrix dimensions
+ *
+ */
 
 cross_stats cross_stats_alloc(int rows, int cols) {
     cross_stats x = malloc(sizeof(s_cross_stats));
@@ -821,6 +1118,11 @@ cross_stats cross_stats_alloc(int rows, int cols) {
     return x;
 }
 
+/** @brief free a cross_stats object
+ *
+ *
+ *
+ */
 void cross_stats_free(cross_stats x) {
     free(x->rows_X);
     free(x->rows_n);
@@ -829,6 +1131,14 @@ void cross_stats_free(cross_stats x) {
     free(x);
 }
 
+/** @brief count how often each solved item is overproduced 
+ *
+ * @param DNF pDNF that indicates which skills may solve which item (rows)
+ * @param B skill matrix (subjects are rows)
+ *
+ *
+ *
+ */
 cross_stats cross_stats_alloc_DNFxBT_T(positive_DNF_matrix DNF, matrix B) {
     assert(DNF->cols == B->cols);
     matrix C = matrix_alloc(B->rows, DNF->rows);
@@ -865,22 +1175,14 @@ cross_stats cross_stats_alloc_DNFxBT_T(positive_DNF_matrix DNF, matrix B) {
     return S;
 }
 
-int vector_count_crosses(vector V) {
-    int count = 0;
-    int i;
-    for (i = 0; i < V->size; i++) {
-        if (INCIDESV(V->incidence,i))
-            count++;
-    }
 
-    return count;
-}
-/**
+/** @brief calculate implications from M, up to given size
+ *
  * calculate the implications up to n_grams and return the
  * nontrivial ones as avltree,
  * keys are premise-vectors, values are conclusion-vectors.
  *
- * delete with
+ * delete return value with
  *
  * cp_avltree_destroy_custom( ..., vector_free, vector_free )
  */
@@ -977,11 +1279,16 @@ cp_avltree * matrix_column_implications(matrix M, int n_grams) {
     return implications;
 }
 
+/** @brief set the DNF to be all-bottom.
+ *
+ *
+ *
+ */
 void DNF_clear(positive_DNF_matrix DNF) {
     cp_vector_destroy_custom(DNF->entries, int_vector_free);
     DNF->entries = cp_vector_create(1);
 }
-/** 
+/** @brief remove unnecessary row-replacements from the pDNF
  *
  * remove those rows who are supersets of other rows, i.e.
  * if
@@ -1028,7 +1335,11 @@ void DNF_clarify_join(positive_DNF_matrix DNF) {
 
     vector_free(obsolete);
 }
-/** returns number of bits that are set in V */
+/**
+ * @brief returns number of bits that are set in V 
+ *
+ *
+ */
 int vector_checksum(vector V) {
     int count;
     int i;
