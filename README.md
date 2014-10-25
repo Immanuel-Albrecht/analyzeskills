@@ -5,6 +5,7 @@ Simple tool that decomposes response patterns into a skill set
 and a positive disjunctive normal form-matrix that expresses 
 which skill sets solve which item.
 
+See https://immanuel-albrecht.de/reconstructing-learners-skills-and-item-skill-requirements-from-response-table/ for a detailed introduction to the program.
 
 Prerequisites:
 --------------
